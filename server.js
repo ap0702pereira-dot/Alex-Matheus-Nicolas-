@@ -1,0 +1,277 @@
+
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const PORT = 3000;
+
+// ======================================
+// 1. CONFIGURAÇÕES
+// ======================================
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ======================================
+// 2. CONFIGURAÇÃO DOS ARQUIVOS
+// ======================================
+
+const PASTA_DATA = path.join(__dirname, 'data');
+
+if (!fs.existsSync(PASTA_DATA)) {
+    fs.mkdirSync(PASTA_DATA, { recursive: true });
+}
+
+const CAMINHO_USUARIOS = path.join(PASTA_DATA, 'usuarios.json');
+const CAMINHO_RESERVAS = path.join(PASTA_DATA, 'reservas.json');
+
+// ======================================
+// 3. FUNÇÃO PARA LER ARQUIVOS
+// ======================================
+
+function lerArquivo(caminho) {
+    try {
+        if (!fs.existsSync(caminho)) {
+            fs.writeFileSync(caminho, '[]', 'utf-8');
+        }
+
+        const conteudo = fs.readFileSync(caminho, 'utf-8');
+        const dados = JSON.parse(conteudo || '[]');
+
+        if (!Array.isArray(dados)) {
+            throw new Error('O arquivo precisa conter uma lista JSON.');
+        }
+
+        return dados;
+
+    } catch (erro) {
+        console.error('Erro ao ler arquivo:', erro);
+        throw erro;
+    }
+}
+
+// ======================================
+// 4. FUNÇÃO PARA SALVAR ARQUIVOS
+// ======================================
+
+function salvarArquivo(caminho, dados) {
+    fs.writeFileSync(
+        caminho,
+        JSON.stringify(dados, null, 2),
+        'utf-8'
+    );
+}
+
+// Inicializar arquivos
+lerArquivo(CAMINHO_USUARIOS);
+lerArquivo(CAMINHO_RESERVAS);
+
+// ======================================
+// 5. ROTA DE LOGIN
+// ======================================
+
+app.post('/api/login', (req, res) => {
+    try {
+        const { email, senha } = req.body;
+
+        if (!email || !senha) {
+            return res.status(400).json({
+                erro: 'Informe o e-mail e a senha.'
+            });
+        }
+
+        const usuarios = lerArquivo(CAMINHO_USUARIOS);
+
+        const usuario = usuarios.find(
+            u => u.email === email && u.senha === senha
+        );
+
+        if (!usuario) {
+            return res.status(401).json({
+                erro: 'E-mail ou senha inválidos.'
+            });
+        }
+
+        res.json({
+            sucesso: true,
+            mensagem: 'Login realizado com sucesso!',
+            usuario: {
+                id: usuario.id,
+                nome: usuario.nome,
+                email: usuario.email,
+                perfil: usuario.perfil
+            }
+        });
+
+    } catch (erro) {
+        console.error('Erro no login:', erro);
+
+        res.status(500).json({
+            erro: 'Erro interno ao realizar login.'
+        });
+    }
+});
+
+// ======================================
+// 6. LISTAR RESERVAS
+// ======================================
+
+app.get('/api/reservas', (req, res) => {
+    try {
+        const reservas = lerArquivo(CAMINHO_RESERVAS);
+
+        res.json(reservas);
+
+    } catch (erro) {
+        console.error('Erro ao listar reservas:', erro);
+
+        res.status(500).json({
+            erro: 'Não foi possível carregar as reservas.'
+        });
+    }
+});
+
+// ======================================
+// 7. CRIAR RESERVA
+// ======================================
+
+app.post('/api/reservas', (req, res) => {
+    try {
+        const {
+            professor,
+            serie,
+            dia,
+            horario,
+            usuarioId
+        } = req.body;
+
+        if (!professor || !serie || !dia || !horario) {
+            return res.status(400).json({
+                erro: 'Preencha todos os campos obrigatórios.'
+            });
+        }
+
+        const reservas = lerArquivo(CAMINHO_RESERVAS);
+
+        // Verificar conflito de horário
+        const conflito = reservas.find(
+            r => r.dia === dia && r.horario === horario
+        );
+
+        if (conflito) {
+            return res.status(409).json({
+                erro: 'Este horário já está reservado para este dia.'
+            });
+        }
+
+        const novaReserva = {
+            id: Date.now(),
+            usuarioId: usuarioId || null,
+            professor,
+            serie,
+            dia,
+            horario,
+            criadoEm: new Date().toISOString()
+        };
+
+        reservas.push(novaReserva);
+
+        salvarArquivo(CAMINHO_RESERVAS, reservas);
+
+        res.status(201).json({
+            sucesso: true,
+            mensagem: 'Reserva realizada com sucesso!',
+            reserva: novaReserva
+        });
+
+    } catch (erro) {
+        console.error('Erro ao criar reserva:', erro);
+
+        res.status(500).json({
+            erro: 'Não foi possível realizar a reserva.'
+        });
+    }
+});
+
+// ======================================
+// 8. CANCELAR RESERVA
+// ======================================
+
+app.delete('/api/reservas/:id', (req, res) => {
+    try {
+        const idReserva = Number(req.params.id);
+
+        if (!Number.isSafeInteger(idReserva) || idReserva <= 0) {
+            return res.status(400).json({
+                erro: 'ID da reserva inválido.'
+            });
+        }
+
+        const reservas = lerArquivo(CAMINHO_RESERVAS);
+
+        const index = reservas.findIndex(
+            r => r.id === idReserva
+        );
+
+        if (index === -1) {
+            return res.status(404).json({
+                erro: 'Reserva não encontrada.'
+            });
+        }
+
+        reservas.splice(index, 1);
+
+        salvarArquivo(CAMINHO_RESERVAS, reservas);
+
+        res.json({
+            sucesso: true,
+            mensagem: 'Reserva cancelada com sucesso!'
+        });
+
+    } catch (erro) {
+        console.error('Erro ao cancelar reserva:', erro);
+
+        res.status(500).json({
+            erro: 'Não foi possível cancelar a reserva.'
+        });
+    }
+});
+
+// ======================================
+// 9. TESTAR SERVIDOR
+// ======================================
+
+app.get('/api/status', (req, res) => {
+    res.json({
+        funcionando: true,
+        sistema: 'Sala Acessa',
+        mensagem: 'Servidor funcionando corretamente!'
+    });
+});
+
+// ======================================
+// 10. TRATAMENTO DE ROTAS INEXISTENTES
+// ======================================
+
+app.use((req, res) => {
+    res.status(404).json({
+        erro: 'Rota não encontrada.'
+    });
+});
+
+// ======================================
+// 11. INICIAR SERVIDOR
+// ======================================
+
+app.listen(PORT, () => {
+    console.log('======================================');
+    console.log('       SISTEMA SALA ACESSA');
+    console.log('======================================');
+    console.log(`Servidor: http://localhost:${PORT}`);
+    console.log('Status: Funcionando!');
+    console.log('======================================');
+});
+

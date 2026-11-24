@@ -1,0 +1,12 @@
+{
+    "name": "agenda-sala-acessa",
+    "version": "1.0.0",
+    "description": "Sistema simplificado de reservas da Sala Acessa",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "express": "^4.22.3"
+    }
+}

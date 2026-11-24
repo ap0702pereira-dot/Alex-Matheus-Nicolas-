@@ -1,0 +1,17 @@
+
+[
+    {
+        "id": 1,
+        "nome": "Professor Silva",
+        "email": "professor@escola.br",
+        "senha": "123",
+        "perfil": "professor"
+    },
+    {
+        "id": 2,
+        "nome": "Coordenador Acessa",
+        "email": "admin@escola.br",
+        "senha": "admin",
+        "perfil": "admin"
+    }
+]

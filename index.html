@@ -1,0 +1,522 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Agenda Sala Acessa</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #4f46e5, #06b6d4);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.layout {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 1100px;
+    align-items: flex-start;
+}
+
+.container {
+    flex: 1;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    color: white;
+}
+
+.horarios {
+    width: 300px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 25px;
+    padding: 25px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.header-user {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+
+.btn-sair {
+    background: rgba(239,68,68,0.8);
+    border: none;
+    color: white;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.topo {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.topo h1 {
+    font-size: 26px;
+    font-weight: 600;
+}
+
+.campo {
+    margin-bottom: 18px;
+}
+
+.campo label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.campo input {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.18);
+    color: white;
+    outline: none;
+    font-size: 15px;
+}
+
+.campo input::placeholder {
+    color: rgba(255,255,255,0.7);
+}
+
+.campo input[type="date"] {
+    color-scheme: light;
+}
+
+.btn-reservar {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 15px;
+    background: white;
+    color: #4f46e5;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: 10px;
+}
+
+.btn-reservar:hover {
+    transform: scale(1.02);
+    background: #f3f4f6;
+}
+
+.horario-card {
+    background: rgba(255,255,255,0.15);
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    text-align: center;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.horario-card:hover {
+    transform: scale(1.03);
+    background: rgba(255,255,255,0.22);
+}
+
+.horario-card.selecionado {
+    background: #10b981;
+    font-weight: bold;
+}
+
+.horario-card.ocupado {
+    background: rgba(239,68,68,0.4);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.reservas {
+    margin-top: 25px;
+}
+
+.card {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+@media(max-width:900px) {
+    .layout {
+        flex-direction: column;
+    }
+
+    .horarios {
+        width: 100%;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <div class="container">
+
+        <div class="header-user">
+            <span id="nomeUsuario">Olá, Professor</span>
+            <button class="btn-sair" onclick="sair()">Sair</button>
+        </div>
+
+        <div class="topo">
+            <h1>Agendamento da Sala Acessa</h1>
+            <p>Selecione a data e o horário para sua aula</p>
+        </div>
+
+        <div class="campo">
+            <label>Nome do Professor(a)</label>
+            <input type="text" id="professora" readonly>
+        </div>
+
+        <div class="campo">
+            <label>Turma / Série</label>
+            <input type="text" id="serie" placeholder="Ex: 3º Ano A">
+        </div>
+
+        <div class="campo">
+            <label>Dia da Reserva</label>
+            <input type="date" id="dia">
+        </div>
+
+        <div class="campo">
+            <label>Horário Selecionado</label>
+            <input type="text" id="horario"
+            placeholder="Clique em um horário ao lado" readonly>
+        </div>
+
+        <button class="btn-reservar" onclick="fazerReserva()">
+            Reservar Sala
+        </button>
+
+        <div class="reservas">
+            <h2>Minhas Reservas</h2>
+            <div id="listaReservas"></div>
+        </div>
+
+    </div>
+
+    <div class="horarios">
+        <h2 style="text-align:center; margin-bottom:15px;">
+            Horários
+        </h2>
+
+        <div id="gradeHorarios"></div>
+    </div>
+
+</div>
+
+<script>
+
+const listaHorariosPadrao = [
+    "07:00 - 07:50",
+    "07:50 - 08:40",
+    "08:40 - 09:30",
+    "09:30 - 10:20",
+    "10:20 - 11:10",
+    "11:10 - 12:00"
+];
+
+let usuarioLogado = null;
+let todasReservas = [];
+let horarioEscolhido = "";
+
+// Retorna a data local no formato YYYY-MM-DD
+function obterDataHoje() {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+    const dia = String(hoje.getDate()).padStart(2, "0");
+
+    return `${ano}-${mes}-${dia}`;
+}
+
+// Proteção de acesso
+document.addEventListener("DOMContentLoaded", () => {
+
+    const sessao = localStorage.getItem("usuarioAcessa");
+
+    if (!sessao) {
+        window.location.href = "/login.html";
+        return;
+    }
+
+    try {
+        usuarioLogado = JSON.parse(sessao);
+
+        if (!usuarioLogado || !usuarioLogado.nome || usuarioLogado.id == null) {
+            throw new Error("Sessão inválida");
+        }
+
+    } catch (erro) {
+        localStorage.removeItem("usuarioAcessa");
+        window.location.href = "/login.html";
+        return;
+    }
+
+    document.getElementById("nomeUsuario").innerText =
+        `Olá, ${usuarioLogado.nome}`;
+
+    document.getElementById("professora").value =
+        usuarioLogado.nome;
+
+    const dia = document.getElementById("dia");
+
+    dia.min = obterDataHoje();
+    dia.value = obterDataHoje();
+
+    carregarDados();
+});
+
+// Sair do sistema
+function sair() {
+    localStorage.removeItem("usuarioAcessa");
+    window.location.href = "/login.html";
+}
+
+// Carregar reservas do servidor
+async function carregarDados() {
+
+    try {
+
+        const resposta = await fetch("/api/reservas");
+
+        if (!resposta.ok) {
+            throw new Error("Não foi possível carregar as reservas.");
+        }
+
+        todasReservas = await resposta.json();
+
+        renderizarHorarios();
+        renderizarMinhasReservas();
+
+    } catch (erro) {
+
+        console.error("Erro ao carregar dados:", erro);
+
+        document.getElementById("gradeHorarios").innerText =
+            "Erro ao carregar horários.";
+
+    }
+}
+
+// Alterar data
+document.getElementById("dia").addEventListener("change", () => {
+
+    horarioEscolhido = "";
+
+    document.getElementById("horario").value = "";
+
+    renderizarHorarios();
+
+});
+
+// Mostrar horários disponíveis
+function renderizarHorarios() {
+
+    const container = document.getElementById("gradeHorarios");
+
+    container.innerHTML = "";
+
+    const diaSelecionado = document.getElementById("dia").value;
+
+    listaHorariosPadrao.forEach(h => {
+
+        const ocupado = todasReservas.some(r =>
+            r.dia === diaSelecionado && r.horario === h
+        );
+
+        const card = document.createElement("div");
+
+        card.classList.add("horario-card");
+
+        if (ocupado) {
+
+            card.classList.add("ocupado");
+            card.innerText = `${h} (Ocupado)`;
+
+        } else {
+
+            if (horarioEscolhido === h) {
+                card.classList.add("selecionado");
+            }
+
+            card.innerText = h;
+
+            card.onclick = () => {
+
+                horarioEscolhido = h;
+
+                document.getElementById("horario").value = h;
+
+                renderizarHorarios();
+
+            };
+
+        }
+
+        container.appendChild(card);
+
+    });
+
+}
+
+// Fazer reserva
+async function fazerReserva() {
+
+    const serie = document.getElementById("serie").value.trim();
+    const dia = document.getElementById("dia").value;
+    const horario = document.getElementById("horario").value;
+
+    if (!serie || !dia || !horario) {
+
+        alert("Preencha todos os campos e selecione um horário!");
+
+        return;
+
+    }
+
+    if (dia < obterDataHoje()) {
+        alert("Não é possível reservar uma data passada.");
+        return;
+    }
+
+    try {
+
+        const resposta = await fetch("/api/reservas", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+                professor: usuarioLogado.nome,
+                usuarioId: usuarioLogado.id,
+                serie: serie,
+                dia: dia,
+                horario: horario
+
+            })
+
+        });
+
+        const resData = await resposta.json();
+
+        if (resposta.ok) {
+
+            alert("Reserva concluída com sucesso!");
+
+            document.getElementById("serie").value = "";
+            document.getElementById("horario").value = "";
+
+            horarioEscolhido = "";
+
+            await carregarDados();
+
+        } else {
+
+            alert(resData.erro || "Falha ao realizar o agendamento.");
+
+        }
+
+    } catch (erro) {
+
+        console.error("Erro:", erro);
+
+        alert("Erro na conexão com o servidor.");
+
+    }
+
+}
+
+// Mostrar minhas reservas
+function renderizarMinhasReservas() {
+
+    const lista = document.getElementById("listaReservas");
+
+    lista.innerHTML = "";
+
+    const minhas = todasReservas.filter(r =>
+        String(r.usuarioId) === String(usuarioLogado.id)
+    );
+
+    if (minhas.length === 0) {
+
+        lista.innerHTML =
+            "<p style='font-size:12px; opacity:0.8;'>Você não possui reservas registradas.</p>";
+
+        return;
+
+    }
+
+    minhas.forEach(r => {
+
+        const card = document.createElement("div");
+
+        card.classList.add("card");
+
+        const dataFormatada = r.dia.split("-").reverse().join("/");
+
+        const turma = document.createElement("div");
+        turma.innerHTML = "<strong>Turma:</strong> ";
+        turma.appendChild(document.createTextNode(r.serie));
+
+        const data = document.createElement("div");
+        data.innerHTML = "<strong>Data:</strong> ";
+        data.appendChild(document.createTextNode(dataFormatada));
+
+        const horario = document.createElement("div");
+        horario.innerHTML = "<strong>Horário:</strong> ";
+        horario.appendChild(document.createTextNode(r.horario));
+
+        card.append(turma, data, horario);
+
+        lista.appendChild(card);
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
