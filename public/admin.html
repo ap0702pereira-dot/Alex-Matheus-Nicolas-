@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Painel do Administrador - Sala Acessa</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            color: #334155;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        h1 {
+            font-size: 20px;
+            color: #1e293b;
+        }
+
+        .btn-sair {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-sair:hover {
+            background: #b91c1c;
+        }
+
+        .tabela-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+
+        .titulo-tabela {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .titulo-tabela h2 {
+            font-size: 16px;
+        }
+
+        .btn-atualizar {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-atualizar:hover {
+            background: #4338ca;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+            min-width: 650px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .btn-excluir {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.3s;
+        }
+
+        .btn-excluir:hover {
+            background: #b91c1c;
+        }
+
+        .mensagem {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+        }
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            h1 {
+                font-size: 18px;
+            }
+
+            .btn-sair {
+                width: 100%;
+            }
+
+            .tabela-container {
+                padding: 15px;
+            }
+
+            .titulo-tabela {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn-atualizar {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="header">
+
+        <h1>📋 Painel Administrativo da Sala Acessa</h1>
+
+        <button class="btn-sair" onclick="sair()">
+            Sair
+        </button>
+
+    </div>
+
+    <div class="tabela-container">
+
+        <div class="titulo-tabela">
+
+            <h2>Todas as Reservas Registradas</h2>
+
+            <button class="btn-atualizar" onclick="carregarTodasReservas()">
+                Atualizar Reservas
+            </button>
+
+        </div>
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Professor</th>
+                    <th>Turma</th>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Ações</th>
+                </tr>
+
+            </thead>
+
+            <tbody id="corpoTabela">
+
+                <tr>
+                    <td colspan="6" class="mensagem">
+                        Carregando agendamentos...
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <script>
+
+        // Verificar acesso do administrador
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const sessao = localStorage.getItem("usuarioAcessa");
+
+            if (!sessao) {
+
+                window.location.href = "/login.html";
+                return;
+
+            }
+
+            let usuario;
+
+            try {
+
+                usuario = JSON.parse(sessao);
+
+            } catch (erro) {
+
+                localStorage.removeItem("usuarioAcessa");
+
+                window.location.href = "/login.html";
+
+                return;
+
+            }
+
+            if (!usuario || usuario.perfil !== "admin") {
+
+                alert("Acesso restrito a administradores!");
+
+                window.location.href = "/index.html";
+
+                return;
+
+            }
+
+            carregarTodasReservas();
+
+        });
+
+        // Sair do painel
+        function sair() {
+
+            localStorage.removeItem("usuarioAcessa");
+
+            window.location.href = "/login.html";
+
+        }
+
+        // Carregar reservas
+        async function carregarTodasReservas() {
+
+            const tbody = document.getElementById("corpoTabela");
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="mensagem">
+                        Carregando reservas...
+                    </td>
+                </tr>
+            `;
+
+            try {
+
+                const resposta = await fetch("/api/reservas");
+
+                if (!resposta.ok) {
+
+                    throw new Error("Falha ao buscar reservas.");
+
+                }
+
+                const reservas = await resposta.json();
+
+                tbody.innerHTML = "";
+
+                if (!Array.isArray(reservas) || reservas.length === 0) {
+
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="mensagem">
+                                Nenhuma reserva encontrada.
+                            </td>
+                        </tr>
+                    `;
+
+                    return;
+
+                }
+
+                reservas.forEach(r => {
+
+                    const tr = document.createElement("tr");
+
+                    // ID
+                    const tdId = document.createElement("td");
+                    tdId.textContent = "#" + r.id;
+
+                    // Professor
+                    const tdProfessor = document.createElement("td");
+
+                    const strong = document.createElement("strong");
+
+                    strong.textContent = r.professor || "Não informado";
+
+                    tdProfessor.appendChild(strong);
+
+                    // Turma
+                    const tdSerie = document.createElement("td");
+                    tdSerie.textContent = r.serie || "Não informada";
+
+                    // Data
+                    const tdData = document.createElement("td");
+
+                    if (r.dia) {
+
+                        tdData.textContent = r.dia
+                            .split("-")
+                            .reverse()
+                            .join("/");
+
+                    } else {
+
+                        tdData.textContent = "Não informada";
+
+                    }
+
+                    // Horário
+                    const tdHorario = document.createElement("td");
+                    tdHorario.textContent = r.horario || "Não informado";
+
+                    // Ações
+                    const tdAcoes = document.createElement("td");
+
+                    const botaoExcluir = document.createElement("button");
+
+                    botaoExcluir.className = "btn-excluir";
+
+                    botaoExcluir.textContent = "Cancelar / Excluir";
+
+                    botaoExcluir.addEventListener("click", () => {
+
+                        cancelarReserva(r.id);
+
+                    });
+
+                    tdAcoes.appendChild(botaoExcluir);
+
+                    // Adicionar células à linha
+                    tr.append(
+                        tdId,
+                        tdProfessor,
+                        tdSerie,
+                        tdData,
+                        tdHorario,
+                        tdAcoes
+                    );
+
+                    tbody.appendChild(tr);
+
+                });
+
+            } catch (erro) {
+
+                console.error("Erro:", erro);
+
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="mensagem">
+                            Erro ao carregar reservas.
+                            Verifique se o servidor está funcionando.
+                        </td>
+                    </tr>
+                `;
+
+            }
+
+        }
+
+        // Excluir reserva
+        async function cancelarReserva(id) {
+
+            const confirmar = confirm(
+                "Tem certeza que deseja cancelar/excluir esta reserva?"
+            );
+
+            if (!confirmar) {
+                return;
+            }
+
+            try {
+
+                const resposta = await fetch(`/api/reservas/${id}`, {
+
+                    method: "DELETE"
+
+                });
+
+                if (resposta.ok) {
+
+                    alert("Reserva excluída com sucesso!");
+
+                    await carregarTodasReservas();
+
+                } else {
+
+                    let dados = {};
+
+                    try {
+                        dados = await resposta.json();
+                    } catch (erro) {}
+
+                    alert(
+                        dados.erro || "Erro ao excluir reserva."
+                    );
+
+                }
+
+            } catch (erro) {
+
+                console.error("Erro:", erro);
+
+                alert("Erro de conexão com o servidor.");
+
+            }
+
+        }
+
+    </script>
+
+</body>
+</html>

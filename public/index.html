@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Agendamento Sala Acessa</title>
+</head>
+<body>
+
+<h1>Agendamento da Sala Acessa</h1>
+
+<form id="formulario">
+
+    <label>Professor:</label>
+    <input type="text" id="professor" required>
+
+    <br><br>
+
+    <label>Turma:</label>
+    <input type="text" id="serie" required>
+
+    <br><br>
+
+    <label>Data:</label>
+    <input type="date" id="dia" required>
+
+    <br><br>
+
+    <label>Horário:</label>
+    <input type="time" id="horario" required>
+
+    <br><br>
+
+    <button type="submit">Agendar</button>
+
+</form>
+
+<p id="mensagem"></p>
+
+<a href="login.html">Área do administrador</a>
+
+<script>
+document.getElementById('formulario')
+.addEventListener('submit', async function(e) {
+
+    e.preventDefault();
+
+    const dados = {
+        professor: document.getElementById('professor').value,
+        serie: document.getElementById('serie').value,
+        dia: document.getElementById('dia').value,
+        horario: document.getElementById('horario').value
+    };
+
+    const resposta = await fetch('/api/reservas', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dados)
+    });
+
+    const resultado = await resposta.json();
+
+    document.getElementById('mensagem').textContent =
+        resultado.mensagem || resultado.erro;
+
+    if (resposta.ok) {
+        this.reset();
+    }
+});
+</script>
+
+</body>
+</html>
